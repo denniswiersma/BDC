@@ -7,12 +7,15 @@ Module description
 # IMPORTS
 import argparse as ap
 
+from Bio import SeqIO
+
 
 # CLASSES
 class MeanPhredCalculator:
     """
     A class to calculate the mean phred score of a fastq file.
     """
+
     def __init__(self):
         self.args = self.parse_args()
 
@@ -65,6 +68,23 @@ class MeanPhredCalculator:
         if batch:
             yield batch
 
+    @staticmethod
+    def calculate_means_from_batch(batch):
+        """
+        Calculate the means of the phred score from a batch of records
+        :param batch: A batch of records
+        :return: A list of the mean phred scores for each base position in the records
+        """
+        batch_averages = []
+        for record in batch:
+            for score_index, score in enumerate(record.letter_annotations["phred_quality"]):
+                try:
+                    batch_averages[score_index] += score
+                except IndexError:
+                    batch_averages.append(score)
+
+        return [score / len(batch) for score in batch_averages]
+
 
 # FUNCTIONS
 
@@ -74,6 +94,9 @@ def main():
     Main function
     """
     mpc = MeanPhredCalculator()
+    records = SeqIO.parse(mpc.args.fastq_files[0], "fastq")
+    for index, batch in enumerate(mpc.batch_iterator(records, 5)):
+        means_per_batch = mpc.calculate_means_from_batch(batch)
 
 
 if __name__ == "__main__":
