@@ -6,7 +6,9 @@ Module description
 
 # IMPORTS
 import argparse as ap
+import csv
 import multiprocessing as mp
+import sys
 
 from Bio import SeqIO
 
@@ -103,6 +105,15 @@ class MeanPhredCalculator:
 
         return [mean / len(means_per_batch) for mean in total_means]
 
+    def write_to_csv(self, total_means):
+        csv_writer = csv.writer(self.args.csvfile, delimiter=',', quotechar='"')
+        csv_writer.writerow(total_means)
+
+    @staticmethod
+    def write_to_stdout(total_means):
+        csv_writer = csv.writer(sys.stdout, delimiter=',', quotechar='"')
+        csv_writer.writerow(total_means)
+
 
 # FUNCTIONS
 
@@ -121,7 +132,10 @@ def main():
                 means_per_batch.extend(results)
         total_means = mpc.calculate_total_means(means_per_batch)
 
-        print(file.name, "\n", total_means, "\n")
+        if mpc.args.csvfile:
+            mpc.write_to_csv(total_means)
+        else:
+            mpc.write_to_stdout(total_means)
 
 
 if __name__ == "__main__":
