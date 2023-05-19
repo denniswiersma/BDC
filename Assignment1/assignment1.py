@@ -85,6 +85,23 @@ class MeanPhredCalculator:
 
         return [score / len(batch) for score in batch_averages]
 
+    @staticmethod
+    def calculate_total_means(means_per_batch):
+        """
+        Calculate the total mean phred score per base position from a list of means per batch
+        :param means_per_batch: A list of means per batch
+        :return: The total mean phred score
+        """
+        total_means = []
+        for batch in means_per_batch:
+            for index, mean in enumerate(batch):
+                try:
+                    total_means[index] += mean
+                except IndexError:
+                    total_means.append(mean)
+
+        return [mean / len(means_per_batch) for mean in total_means]
+
 
 # FUNCTIONS
 
@@ -95,8 +112,12 @@ def main():
     """
     mpc = MeanPhredCalculator()
     records = SeqIO.parse(mpc.args.fastq_files[0], "fastq")
-    for index, batch in enumerate(mpc.batch_iterator(records, 5)):
-        means_per_batch = mpc.calculate_means_from_batch(batch)
+    means_per_batch = []
+    for batch in mpc.batch_iterator(records, 5):
+        means_per_batch.append(mpc.calculate_means_from_batch(batch))
+    total_means = mpc.calculate_total_means(means_per_batch)
+
+    print(total_means)
 
 
 if __name__ == "__main__":
