@@ -112,15 +112,16 @@ def main():
     Main function
     """
     mpc = MeanPhredCalculator()
-    records = SeqIO.parse(mpc.args.fastq_files[0], "fastq")
-    means_per_batch = []
-    with mp.Pool(mpc.args.n) as pool:
-        for batch in mpc.batch_iterator(records, 5):
-            results = pool.map(mpc.calculate_means_from_batch, [batch])
-            means_per_batch.extend(results)
-    total_means = mpc.calculate_total_means(means_per_batch)
+    for file in mpc.args.fastq_files:
+        records = SeqIO.parse(file, "fastq")
+        means_per_batch = []
+        with mp.Pool(mpc.args.n) as pool:
+            for batch in mpc.batch_iterator(records, 5):
+                results = pool.map(mpc.calculate_means_from_batch, [batch])
+                means_per_batch.extend(results)
+        total_means = mpc.calculate_total_means(means_per_batch)
 
-    print(total_means)
+        print(file.name, "\n", total_means, "\n")
 
 
 if __name__ == "__main__":
