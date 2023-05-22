@@ -10,7 +10,7 @@ import csv
 import multiprocessing as mp
 import sys
 
-from Bio import SeqIO
+import numpy as np
 
 
 # CLASSES
@@ -48,6 +48,18 @@ class MeanPhredCalculator:
         return arg_parser.parse_args()
 
     @staticmethod
+    def read_phreds(file):
+        """
+        Return the PHRED scores from a FASTQ file as a list of Numpy arrays.
+        """
+        phred_scores = []
+        for i, line in enumerate(file):
+            if i % 4 == 3:
+                phred_scores.append(np.array([ord(ch) - 33 for ch in line.strip()]))
+
+        return phred_scores
+
+    @staticmethod
     def batch_iterator(iterator, batch_size):
         """Returns lists of length batch_size.
 
@@ -78,15 +90,8 @@ class MeanPhredCalculator:
         :param batch: A batch of records
         :return: A list of the mean phred scores for each base position in the records
         """
-        batch_averages = []
-        for record in batch:
-            for score_index, score in enumerate(record.letter_annotations["phred_quality"]):
-                try:
-                    batch_averages[score_index] += score
-                except IndexError:
-                    batch_averages.append(score)
-
-        return [score / len(batch) for score in batch_averages]
+        batch_averages = np.vstack(batch)
+        return np.mean(batch_averages, axis=0)
 
     @staticmethod
     def calculate_total_means(means_per_batch):
@@ -95,15 +100,8 @@ class MeanPhredCalculator:
         :param means_per_batch: A list of means per batch
         :return: The total mean phred score
         """
-        total_means = []
-        for batch in means_per_batch:
-            for index, mean in enumerate(batch):
-                try:
-                    total_means[index] += mean
-                except IndexError:
-                    total_means.append(mean)
-
-        return [mean / len(means_per_batch) for mean in total_means]
+        total_means = np.vstack(means_per_batch)
+        return total_means.mean(axis=0)
 
     def write_to_csv(self, total_means):
         csv_writer = csv.writer(self.args.csvfile, delimiter=',', quotechar='"')
@@ -124,14 +122,17 @@ def main():
     """
     mpc = MeanPhredCalculator()
     for file in mpc.args.fastq_files:
-        records = SeqIO.parse(file, "fastq")
-        means_per_batch = []
+        print("reading file")
+        records = mpc.read_phreds(file)
+        print("Calculating batches")
+        batches = list(mpc.batch_iterator(records, 5000))
+        print("Calculating means")
         with mp.Pool(mpc.args.n) as pool:
-            for batch in mpc.batch_iterator(records, 5):
-                results = pool.map(mpc.calculate_means_from_batch, [batch])
-                means_per_batch.extend(results)
+            means_per_batch = pool.map(mpc.calculate_means_from_batch, batches)
+        print("calculating total means")
         total_means = mpc.calculate_total_means(means_per_batch)
 
+        print("writing to csv")
         if mpc.args.csvfile:
             mpc.write_to_csv(total_means)
         else:
