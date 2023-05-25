@@ -1,12 +1,11 @@
 #!/usr/local/bin/python3.9
 
 """
-Module description
+Calculate the mean phred score for each base position in a fastq file.
 """
 
 # IMPORTS
 import argparse as ap
-import csv
 import multiprocessing as mp
 import sys
 
@@ -107,13 +106,23 @@ class MeanPhredCalculator:
         return total_means.mean(axis=0)
 
     def write_to_csv(self, total_means):
-        df = pd.DataFrame(total_means)
-        df.to_csv(self.args.csvfile, header=False)
+        """
+        Write the total means to a csv file
+
+        :param total_means: An array of the total means
+        """
+        data_frame = pd.DataFrame(total_means)
+        data_frame.to_csv(self.args.csvfile, header=False)
 
     @staticmethod
     def write_to_stdout(total_means):
-        df = pd.DataFrame(total_means)
-        df.to_csv(sys.stdout, header=False)
+        """
+        Write the total means to stdout
+
+        :param total_means: An array of the total means
+        """
+        data_frame = pd.DataFrame(total_means)
+        data_frame.to_csv(sys.stdout, header=False)
 
 
 # FUNCTIONS
