@@ -55,9 +55,11 @@ class MeanPhredCalculator:
         phred_scores = []
         for i, line in enumerate(file):
             if i % 4 == 3:
-                phred_scores.append(np.array([ord(ch) - 33 for ch in line.strip()]))
+                phred_scores.append(line.strip())
 
         return phred_scores
+
+    # [ord(ch) - 33 for ch in line.strip()]
 
     @staticmethod
     def batch_iterator(iterator, batch_size):
@@ -90,7 +92,10 @@ class MeanPhredCalculator:
         :param batch: A batch of records
         :return: A list of the mean phred scores for each base position in the records
         """
-        batch_averages = np.vstack(batch)
+        phreds = []
+        for phred_line in batch:
+            phreds.append([ord(ch) - 33 for ch in phred_line])
+        batch_averages = np.vstack(phreds)
         return np.mean(batch_averages, axis=0)
 
     @staticmethod
