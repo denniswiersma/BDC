@@ -11,6 +11,7 @@ import multiprocessing as mp
 import sys
 
 import numpy as np
+import pandas as pd
 
 
 # CLASSES
@@ -59,8 +60,6 @@ class MeanPhredCalculator:
 
         return phred_scores
 
-    # [ord(ch) - 33 for ch in line.strip()]
-
     @staticmethod
     def batch_iterator(iterator, batch_size):
         """Returns lists of length batch_size.
@@ -92,11 +91,10 @@ class MeanPhredCalculator:
         :param batch: A batch of records
         :return: A list of the mean phred scores for each base position in the records
         """
-        phreds = []
-        for phred_line in batch:
-            phreds.append([ord(ch) - 33 for ch in phred_line])
-        batch_averages = np.vstack(phreds)
-        return np.mean(batch_averages, axis=0)
+        ascii_dict = {chr(i): i-33 for i in range(33, 127)}
+        phreds = np.array([[ascii_dict[ch] for ch in phred_line] for phred_line in batch])
+        return np.mean(phreds, axis=0)
+
 
     @staticmethod
     def calculate_total_means(means_per_batch):
@@ -109,13 +107,13 @@ class MeanPhredCalculator:
         return total_means.mean(axis=0)
 
     def write_to_csv(self, total_means):
-        csv_writer = csv.writer(self.args.csvfile, delimiter=',', quotechar='"')
-        csv_writer.writerow(total_means)
+        df = pd.DataFrame(total_means)
+        df.to_csv(self.args.csvfile, header=False)
 
     @staticmethod
     def write_to_stdout(total_means):
-        csv_writer = csv.writer(sys.stdout, delimiter=',', quotechar='"')
-        csv_writer.writerow(total_means)
+        df = pd.DataFrame(total_means)
+        df.to_csv(sys.stdout, header=False)
 
 
 # FUNCTIONS
