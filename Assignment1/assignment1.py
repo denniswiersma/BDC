@@ -91,7 +91,13 @@ class MeanPhredCalculator:
         :return: A list of the mean phred scores for each base position in the records
         """
         ascii_dict = {chr(i): i-33 for i in range(33, 127)}
-        phreds = np.array([[ascii_dict[ch] for ch in phred_line] for phred_line in batch])
+        phreds = []
+        
+        for phred_line in batch:
+            phreds_num = np.full((1000,), np.nan)
+            for i, ch in enumerate(phred_line):
+                phreds_num[i] = ascii_dict[ch]
+            phreds.append(phreds_num)
         return np.mean(phreds, axis=0)
 
 
