@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3.9
+#!/usr/local/bin/python3.11
 
 """
 Calculate the mean phred score for each base position in a fastq file.
