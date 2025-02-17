@@ -29,21 +29,37 @@ class MeanPhredCalculator:
         :return: An argparse object containing the arguments
         """
         # Create the parser
-        arg_parser = ap.ArgumentParser(description="Script voor Opdracht 1 van Big Data Computing")
+        arg_parser = ap.ArgumentParser(
+            description="Script voor Opdracht 1 van Big Data Computing"
+        )
 
         # Add argument for the number of cores to use
-        arg_parser.add_argument("-n", action="store",
-                                dest="n", required=True, type=int,
-                                help="Aantal cores om te gebruiken.")
+        arg_parser.add_argument(
+            "-n",
+            action="store",
+            dest="n",
+            required=True,
+            type=int,
+            help="Aantal cores om te gebruiken.",
+        )
         # Add argument for the output file
-        arg_parser.add_argument("-o", action="store", dest="csvfile",
-                                type=ap.FileType('w', encoding='UTF-8'),
-                                required=False,
-                                help="CSV file om de output in op te slaan. Default is output "
-                                     "naar terminal STDOUT")
+        arg_parser.add_argument(
+            "-o",
+            action="store",
+            dest="csvfile",
+            type=ap.FileType("w", encoding="UTF-8"),
+            required=False,
+            help="CSV file om de output in op te slaan. Default is output "
+            "naar terminal STDOUT",
+        )
         # Add argument for the input files
-        arg_parser.add_argument("fastq_files", action="store", type=ap.FileType('r'), nargs='+',
-                                help="Minstens 1 Illumina Fastq Format file om te verwerken")
+        arg_parser.add_argument(
+            "fastq_files",
+            action="store",
+            type=ap.FileType("r"),
+            nargs="+",
+            help="Minstens 1 Illumina Fastq Format file om te verwerken",
+        )
 
         return arg_parser.parse_args()
 
@@ -90,16 +106,15 @@ class MeanPhredCalculator:
         :param batch: A batch of records
         :return: A list of the mean phred scores for each base position in the records
         """
-        ascii_dict = {chr(i): i-33 for i in range(33, 127)}
+        ascii_dict = {chr(i): i - 33 for i in range(33, 127)}
         phreds = []
-        
+
         for phred_line in batch:
             phreds_num = np.full((1000,), np.nan)
             for i, ch in enumerate(phred_line):
                 phreds_num[i] = ascii_dict[ch]
             phreds.append(phreds_num)
         return np.mean(phreds, axis=0)
-
 
     @staticmethod
     def calculate_total_means(means_per_batch):
@@ -132,6 +147,7 @@ class MeanPhredCalculator:
 
 
 # FUNCTIONS
+
 
 # MAIN
 def main():
