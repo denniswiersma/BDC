@@ -8,6 +8,7 @@ Calculate the mean phred score for each base position in a fastq file.
 import argparse as ap
 import multiprocessing as mp
 import sys
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -107,14 +108,19 @@ class MeanPhredCalculator:
         :return: A list of the mean phred scores for each base position in the records
         """
         ascii_dict = {chr(i): i - 33 for i in range(33, 127)}
+        max_length = max(len(line) for line in batch)
         phreds = []
 
         for phred_line in batch:
-            phreds_num = np.full((1000,), np.nan)
-            for i, ch in enumerate(phred_line):
-                phreds_num[i] = ascii_dict[ch]
+            phreds_num = np.full((max_length,), np.nan)
+            for i, character in enumerate(phred_line):
+                phreds_num[i] = ascii_dict[character]
             phreds.append(phreds_num)
-        return np.mean(phreds, axis=0)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            with np.errstate(invalid="ignore"):
+                return np.nanmean(phreds, axis=0)
 
     @staticmethod
     def calculate_total_means(means_per_batch):
@@ -124,7 +130,9 @@ class MeanPhredCalculator:
         :return: The total mean phred score
         """
         total_means = np.vstack(means_per_batch)
-        return total_means.mean(axis=0)
+        means = total_means.mean(axis=0)
+        means = means[~np.isnan(means)]
+        return means
 
     def write_to_csv(self, total_means):
         """
@@ -163,6 +171,7 @@ def main():
         print("Calculating means")
         with mp.Pool(mpc.args.n) as pool:
             means_per_batch = pool.map(mpc.calculate_means_from_batch, batches)
+        # print(f"means_per_batch: {means_per_batch}")
         print("calculating total means")
         total_means = mpc.calculate_total_means(means_per_batch)
 
