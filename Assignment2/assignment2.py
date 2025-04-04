@@ -45,7 +45,7 @@ def parse_args():
     server_args = arg_parser.add_argument_group(
         title="Arguments when run in server mode"
     )
-    # Add argument for the output file
+    # add argument for the output file
     server_args.add_argument(
         "-o",
         "--output",
@@ -56,7 +56,7 @@ def parse_args():
         help="CSV file om de output in op te slaan. Default is output "
         "naar terminal STDOUT",
     )
-    # Add argument for the input files
+    # add argument for the input files
     server_args.add_argument(
         "fastq_files",
         action="store",
@@ -77,7 +77,7 @@ def parse_args():
     client_args = arg_parser.add_argument_group(
         title="Arguments when run in client mode"
     )
-    # Add argument for the number of cores to use
+    # add argument for the number of cores to use
     client_args.add_argument(
         "-n",
         action="store",
@@ -85,7 +85,7 @@ def parse_args():
         type=int,
         help="Aantal cores om te gebruiken.",
     )
-    # Add argument for the server address
+    # add argument for the server address
     arg_parser.add_argument(
         "-t",
         "--host",
@@ -95,7 +95,7 @@ def parse_args():
         default="localhost",
         help="IP adres van de server",
     )
-    # Add argument for the server port
+    # add argument for the server port
     client_args.add_argument(
         "-p",
         "--port",
@@ -149,7 +149,6 @@ class Server:
         """
         Run the server, sending data to the client.
         """
-        # Start a shared manager server and access its queues
         manager = self.make_server_manager()
         shared_job_q = manager.get_job_q()
         shared_result_q = manager.get_result_q()
@@ -178,7 +177,7 @@ class Server:
         time.sleep(5)
         means = [r["result"] for r in results]
         total_means = MeanPhredCalculator.calculate_total_means(means)
-        # Write to output
+        # write to output
         if self.csvfile:
             pd.DataFrame(total_means).to_csv(self.csvfile, header=False)
         else:
@@ -266,7 +265,7 @@ class Client:
                         result_q.put({"job": job, "result": "some error"})
 
             except queue.Empty:
-                print("sleepytime for", my_name)
+                print("sleeping", my_name)
                 time.sleep(1)
 
 
@@ -375,23 +374,6 @@ def main():
             port=args.port,
             authkey=authkey,
         )
-
-    # for file in mpc.args.fastq_files:
-    #     print("reading file")
-    #     records = mpc.read_phreds(file)
-    #     print("Calculating batches")
-    #     batches = list(mpc.batch_iterator(records, 5000))
-    #     print("Calculating means")
-    #     with mp.Pool(mpc.args.n) as pool:
-    #         means_per_batch = pool.map(mpc.calculate_means_from_batch, batches)
-    #     print("calculating total means")
-    #     total_means = mpc.calculate_total_means(means_per_batch)
-    #
-    #     print("writing to csv")
-    #     if mpc.args.csvfile:
-    #         mpc.write_to_csv(total_means)
-    #     else:
-    #         mpc.write_to_stdout(total_means)
 
 
 if __name__ == "__main__":
